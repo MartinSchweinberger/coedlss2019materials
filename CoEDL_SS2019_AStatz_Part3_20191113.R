@@ -1,8 +1,8 @@
 ###############################################################
 # Title:     Advanced Statz for Linguistics - CoEDL Summer School 2019 Workshop
-# Part:      1 (Basics)
+# Part:      3 (Tree-based procedures)
 # Author:    Martin Schweinberger
-# Date:      20191112
+# Date:      20191117
 # R version: 3.5.1 (2018-07-02) -- "Feather Spray"
 # Contact:    m.schweinberger@uq.edu.au
 # Disclaimer: If you have questions,suggestions or you found errors
