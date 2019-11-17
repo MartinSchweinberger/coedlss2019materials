@@ -51,7 +51,7 @@ library(Boruta)
 library(caret) 
 ###############################################################
 #                  LOAD AND INSPECT DATA
-citdata <- read.delim("https://slcladal.github.io/data/treedata.txt", header = T, sep = "\t")
+citdata <- read.delim("https://github.com/MartinSchweinberger/coedlss2019materials/datatables/treedata.txt", header = T, sep = "\t")
 # inspect data
 head(citdata); str(citdata)
 
