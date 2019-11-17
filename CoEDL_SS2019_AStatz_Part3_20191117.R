@@ -370,7 +370,9 @@ rfmodel1_pred <- unlist(treeresponse(rfmodel1))[c(FALSE,TRUE)]
 somers2(rfmodel1_pred, as.numeric(rfdata$SUFLike) - 1)
 
 # extract variable importance based on mean decrease in accuracy
-varimp(rfmodel1, conditional = T) # conditional=T adjusts for correlations between predictors
+rfmodel1_varimp <- varimp(rfmodel1, conditional = T) # conditional=T adjusts for correlations between predictors
+# show variable importance
+rfmodel1_varimp
 
 # plot result
 dotchart(sort(rfmodel1_varimp), pch = 20, main = "Conditional importance of variables")
@@ -393,7 +395,7 @@ par(mar = c(5, 4, 4, 2) + 0.1)
 # allows us to use different diagnostics and pruning techniques
 # create random forest model using randomForest function
 rfmodel2 <- randomForest(SUFLike ~ ., data=rfdata, proximity=TRUE)
-# inspect data
+# inspect model
 rfmodel2 
 
 # extract error rates to see if ntree (number of trees) can be reduced
@@ -447,10 +449,18 @@ partialPlot(rfmodel3, rfdata, Age)
 ###############################################################
 #                        BORUTA
 # create Boruta data
-borutadata <- read.delim("https://raw.githubusercontent.com/MartinSchweinberger/coedlss2019materials/master/datatables/reallydata.txt", header = T, sep = "\t")
-
+borutadata <- read.delim("https://raw.githubusercontent.com/MartinSchweinberger/coedlss2019materials/master/datatables/borutadata.txt", header = T, sep = "\t")
 # inspect Boruta data
-head(borutadata)
+str(borutadata)
+
+# factorize variables (boruta - like rf - require factors instead of character vectors)
+fcts <- c("Age", "Adjective", "FileSpeaker", "Function", "Priming", "Gender", 
+          "Occupation", "ConversationType", "AudienceSize", "very", "really", 
+          "Freq", "Gradabilty", "SemanticCategory")
+borutadata[fcts] <- lapply(borutadata[fcts], factor)
+# inspect data
+str(borutadata)
+
 
 # initial run
 boruta1 <- Boruta(SUFLike~.,data=borutadata)
