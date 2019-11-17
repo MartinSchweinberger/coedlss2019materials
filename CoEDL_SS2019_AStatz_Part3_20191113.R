@@ -79,6 +79,7 @@ gini_low <- 1-(60/(60+85))^2 - (85/(60+85))^2    # Gini: low
 gini_status <- 73/(33+73)* gini_high +  60/(60+85) * gini_low
 gini_status
 
+#activate libraries
 library(grid)
 library(Gmisc)
 grid.newpage()
