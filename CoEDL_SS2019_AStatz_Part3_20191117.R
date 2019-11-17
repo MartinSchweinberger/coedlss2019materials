@@ -25,7 +25,7 @@ options(max.print=10000)
 imageDirectory<-"images"
 # install libraries (remove # to activate)
 #install.packages(c("partykit", "dplyr", "grid", "Gmisc", "Rling", "ggplot2", "cowplot", 
-#                   "randomForest", "party", "Hmisc", "Boruta", "caret"))
+#                   "randomForest", "party", "Hmisc", "Boruta", "caret", "RCurl))
 # activate libraries
 library(partykit)              
 library(dplyr)  
@@ -38,6 +38,7 @@ library(randomForest)
 library(party)
 library(Hmisc)
 library(Boruta) 
+library(RCurl)
 # to install the caret library, it was neccessary to go through the installation 
 # process below - once caret is installed once, you do not need to go through 
 # these steps again
@@ -51,7 +52,7 @@ library(Boruta)
 library(caret) 
 ###############################################################
 #                  LOAD AND INSPECT DATA
-citdata <- read.delim("https://github.com/MartinSchweinberger/coedlss2019materials/datatables/treedata.txt", header = T, sep = "\t")
+citdata <- read.delim("https://raw.githubusercontent.com/MartinSchweinberger/coedlss2019materials/master/datatables/treedata.txt", header = T, sep = "\t")
 # inspect data
 head(citdata); str(citdata)
 
@@ -293,8 +294,7 @@ ptb
 #              CIT: SPLITS IN NUMERIC VARIABLES        
 ###############################################################
 # load new data
-citdata2 <- read.delim("https://slcladal.github.io/data/numerictreedata.txt", header = T, sep = "\t")
-citdata2 <- citdata2 %>%
+citdata2 <- read.delim("https://slcladal.github.io/data/numerictreedata.txt", header = T, sep = "\t") %>%
   arrange(Age)
 # inspect data
 citdata2
@@ -335,79 +335,37 @@ citdata3 # split at 24.5 (lowest Gini value)
 ###############################################################
 #                     RANDOM FOREST
 ###############################################################
-# process data
-rfdata <- citdata %>%
-  dplyr::mutate(ID = 1:nrow(citdata)) %>%
-  dplyr::select(ID, Age, Gender, Status, LikeUser)
-
-citdata <- citdata[c(6, 3, 4, 1, 2, 2),]
-rownames(citdata) <- NULL
-
-# define path to data
-url <- "http://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data"
-# load data 
-data <- read.csv(url, header=FALSE)
+# load new data
+rfdata <- read.delim("https://raw.githubusercontent.com/MartinSchweinberger/coedlss2019materials/master/datatables/mblrdata.txt", header = T, sep = "\t")
 # inspect data
-head(data) 
+head(rfdata); str(rfdata)
 
-colnames(data) <- c(
-  "age",
-  "sex",# 0 = female, 1 = male
-  "cp", # chest pain
-  # 1 = typical angina,
-  # 2 = atypical angina,
-  # 3 = non-anginal pain,
-  # 4 = asymptomatic
-  "trestbps", # resting blood pressure (in mm Hg)
-  "chol", # serum cholestoral in mg/dl
-  "fbs",  # fasting blood sugar greater than 120 mg/dl, 1 = TRUE, 0 = FALSE
-  "restecg", # resting electrocardiographic results
-  # 1 = normal
-  # 2 = having ST-T wave abnormality
-  # 3 = showing probable or definite left ventricular hypertrophy
-  "thalach", # maximum heart rate achieved
-  "exang",   # exercise induced angina, 1 = yes, 0 = no
-  "oldpeak", # ST depression induced by exercise relative to rest
-  "slope", # the slope of the peak exercise ST segment
-  # 1 = upsloping
-  # 2 = flat
-  # 3 = downsloping
-  "ca", # number of major vessels (0-3) colored by fluoroscopy
-  "thal", # this is short of thalium heart scan
-  # 3 = normal (no cold spots)
-  # 6 = fixed defect (cold spots during rest and exercise)
-  # 7 = reversible defect (when cold spots only appear during exercise)
-  "hd" # (the predicted attribute) - diagnosis of heart disease
-  # 0 if less than or equal to 50% diameter narrowing
-  # 1 if greater than 50% diameter narrowing
-)
-head(data) # now we have data and column names
+# remove ID
+rfdata <- rfdata %>%
+  dplyr::select(-ID)
+# factorize variables (rf require factors instead of character vectors)
+fcts <- c("Gender", "Age", "ConversationType", "Priming", "SUFlike")
+rfdata[fcts] <- lapply(rfdata[fcts], factor)
+# inspect data
+str(rfdata)
 
-str(data)
+# check for NAs
+nrow(rfdata)
 
-data[data == "?"] <- NA
-data[data$sex == 0,]$sex <- "F"
-data[data$sex == 1,]$sex <- "M"
-data$sex <- as.factor(data$sex)
-data$cp <- as.factor(data$cp)
-data$fbs <- as.factor(data$fbs)
-data$restecg <- as.factor(data$restecg)
-data$exang <- as.factor(data$exang)
-data$slope <- as.factor(data$slope)
-data$ca <- as.integer(data$ca) 
+natest <- rfdata %>%
+  na.omit()
+nrow(natest) # no NAs present in data (same number of rows with NAs omitted)
 
-data$ca <- as.factor(data$ca)  # ...then convert the integers to factor levels
-data$thal <- as.integer(data$thal) # "thal" also had "?"s in it.
-data$thal <- as.factor(data$thal)
-data$hd <- ifelse(test=data$hd == 0, yes="Healthy", no="Unhealthy")
-data$hd <- as.factor(data$hd) # Now convert to a factor
-str(data) 
+# set.seed (to store random numbers and thus make results reporducible)
+set.seed(2019120203)
+# IF NAs are present, they can either be deleted OR their values for
+# any missing values can be imputed using proximities
+# for imputing values, you could run the code below (remove # to activate)
+# but as our data does not have NAs, we will skip this step
+#data.imputed <- rfImpute(SUFlike ~ ., data = rfdata, iter=6)
 
-set.seed(42)
-## impute any missing values in the training set using proximities
-data.imputed <- rfImpute(hd ~ ., data = data, iter=6)
-
-model <- randomForest(hd ~ ., data=data.imputed, proximity=TRUE)
+# create first rf model
+model <- randomForest(SUFlike ~ ., data=rfdata, proximity=TRUE)
 model 
 
 confusionmatrixtb <- matrix(c("", "Healthy", "Unhealthy", "Healthy", "Number of healthy people correctly called healthy by the forest.", "Number of healthy people incorectly called unhealthy by the forest", "Unhealthy", "Number of unhealthy people incorrectly called healthy by the forest", "Number of unhealthy people correctly called unhealthy by the forest"), ncol = 3, byrow = T)
@@ -416,16 +374,16 @@ confusionmatrixtb
 
 oob.error.data <- data.frame(
   Trees=rep(1:nrow(model$err.rate), times=3),
-  Type=rep(c("OOB", "Healthy", "Unhealthy"), each=nrow(model$err.rate)),
+  Type=rep(c("OOB", "0", "1"), each=nrow(model$err.rate)),
   Error=c(model$err.rate[,"OOB"],
-          model$err.rate[,"Healthy"],
-          model$err.rate[,"Unhealthy"]))
+          model$err.rate[,"0"],
+          model$err.rate[,"1"]))
 
 ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
   geom_line(aes(color=Type))
 # ggsave("oob_error_rate_500_trees.pdf")
 
-model <- randomForest(hd ~ ., data=data.imputed, ntree=1000, proximity=TRUE)
+model <- randomForest(hd ~ ., data=rfdata, ntree=1000, proximity=TRUE)
 model
 
 oob.error.data <- data.frame(
