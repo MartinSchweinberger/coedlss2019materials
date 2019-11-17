@@ -454,16 +454,14 @@ borutadata <- read.delim("https://raw.githubusercontent.com/MartinSchweinberger/
 str(borutadata)
 
 # factorize variables (boruta - like rf - require factors instead of character vectors)
-fcts <- c("Age", "Adjective", "FileSpeaker", "Function", "Priming", "Gender", 
-          "Occupation", "ConversationType", "AudienceSize", "very", "really", 
-          "Freq", "Gradabilty", "SemanticCategory")
+fcts <- c("Age", "Adjective", "Function", "Priming", "Gender", "Occupation", 
+          "ConversationType", "AudienceSize", "really", "Gradabilty", "SemanticCategory")
 borutadata[fcts] <- lapply(borutadata[fcts], factor)
 # inspect data
 str(borutadata)
 
-
 # initial run
-boruta1 <- Boruta(SUFLike~.,data=borutadata)
+boruta1 <- Boruta(really~.,data=borutadata)
 print(boruta1)
 
 getConfirmedFormula(boruta1)
