@@ -336,13 +336,10 @@ citdata3 # split at 24.5 (lowest Gini value)
 #                     RANDOM FOREST
 ###############################################################
 # load new data
-rfdata <- read.delim("https://raw.githubusercontent.com/MartinSchweinberger/coedlss2019materials/master/datatables/mblrdata.txt", header = T, sep = "\t")
+rfdata <- read.delim("https://raw.githubusercontent.com/MartinSchweinberger/coedlss2019materials/master/datatables/rfdata.txt", header = T, sep = "\t")
 # inspect data
 head(rfdata); str(rfdata)
 
-# remove ID
-rfdata <- rfdata %>%
-  dplyr::select(-ID)
 # factorize variables (rf require factors instead of character vectors)
 fcts <- c("Gender", "Age", "ConversationType", "Priming", "SUFlike")
 rfdata[fcts] <- lapply(rfdata[fcts], factor)
@@ -374,10 +371,10 @@ confusionmatrixtb
 
 oob.error.data <- data.frame(
   Trees=rep(1:nrow(model$err.rate), times=3),
-  Type=rep(c("OOB", "0", "1"), each=nrow(model$err.rate)),
+  Type=rep(c("OOB", "no", "yes"), each=nrow(model$err.rate)),
   Error=c(model$err.rate[,"OOB"],
-          model$err.rate[,"0"],
-          model$err.rate[,"1"]))
+          model$err.rate[,"no"],
+          model$err.rate[,"yes"]))
 
 ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
   geom_line(aes(color=Type))
@@ -388,10 +385,10 @@ model
 
 oob.error.data <- data.frame(
   Trees=rep(1:nrow(model$err.rate), times=3),
-  Type=rep(c("OOB", "Healthy", "Unhealthy"), each=nrow(model$err.rate)),
+  Type=rep(c("OOB", "no", "yes"), each=nrow(model$err.rate)),
   Error=c(model$err.rate[,"OOB"],
-          model$err.rate[,"Healthy"],
-          model$err.rate[,"Unhealthy"]))
+          model$err.rate[,"no"],
+          model$err.rate[,"yes"]))
 
 ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
   geom_line(aes(color=Type))
@@ -399,7 +396,7 @@ ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
 
 oob.values <- vector(length=10)
 for(i in 1:10) {
-  temp.model <- randomForest(hd ~ ., data=data.imputed, mtry=i, ntree=1000)
+  temp.model <- randomForest(SUFLike ~ ., data=rfdata, mtry=i, ntree=1000)
   oob.values[i] <- temp.model$err.rate[nrow(temp.model$err.rate),1]
 }
 oob.values
