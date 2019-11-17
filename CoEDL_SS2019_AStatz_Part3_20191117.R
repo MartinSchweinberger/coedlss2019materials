@@ -341,7 +341,7 @@ rfdata <- read.delim("https://raw.githubusercontent.com/MartinSchweinberger/coed
 head(rfdata); str(rfdata)
 
 # factorize variables (rf require factors instead of character vectors)
-fcts <- c("Gender", "Age", "ConversationType", "Priming", "SUFlike")
+fcts <- c("Gender", "Age", "ConversationType", "Priming", "SUFLike")
 rfdata[fcts] <- lapply(rfdata[fcts], factor)
 # inspect data
 str(rfdata)
@@ -359,166 +359,101 @@ set.seed(2019120203)
 # any missing values can be imputed using proximities
 # for imputing values, you could run the code below (remove # to activate)
 # but as our data does not have NAs, we will skip this step
-#data.imputed <- rfImpute(SUFlike ~ ., data = rfdata, iter=6)
-
-# create first rf model
-model <- randomForest(SUFlike ~ ., data=rfdata, proximity=TRUE)
-model 
-
-confusionmatrixtb <- matrix(c("", "Healthy", "Unhealthy", "Healthy", "Number of healthy people correctly called healthy by the forest.", "Number of healthy people incorectly called unhealthy by the forest", "Unhealthy", "Number of unhealthy people incorrectly called healthy by the forest", "Number of unhealthy people correctly called unhealthy by the forest"), ncol = 3, byrow = T)
-confusionmatrixtb
-
-
-oob.error.data <- data.frame(
-  Trees=rep(1:nrow(model$err.rate), times=3),
-  Type=rep(c("OOB", "no", "yes"), each=nrow(model$err.rate)),
-  Error=c(model$err.rate[,"OOB"],
-          model$err.rate[,"no"],
-          model$err.rate[,"yes"]))
-
-ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
-  geom_line(aes(color=Type))
-# ggsave("oob_error_rate_500_trees.pdf")
-
-model <- randomForest(hd ~ ., data=rfdata, ntree=1000, proximity=TRUE)
-model
-
-oob.error.data <- data.frame(
-  Trees=rep(1:nrow(model$err.rate), times=3),
-  Type=rep(c("OOB", "no", "yes"), each=nrow(model$err.rate)),
-  Error=c(model$err.rate[,"OOB"],
-          model$err.rate[,"no"],
-          model$err.rate[,"yes"]))
-
-ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
-  geom_line(aes(color=Type))
-# ggsave("oob_error_rate_1000_trees.pdf")
-
-oob.values <- vector(length=10)
-for(i in 1:10) {
-  temp.model <- randomForest(SUFLike ~ ., data=rfdata, mtry=i, ntree=1000)
-  oob.values[i] <- temp.model$err.rate[nrow(temp.model$err.rate),1]
-}
-oob.values
-
-distance.matrix <- dist(1-model$proximity)
-mds.stuff <- cmdscale(distance.matrix, eig=TRUE, x.ret=TRUE)
-## calculate the percentage of variation that each MDS axis accounts for...
-mds.var.per <- round(mds.stuff$eig/sum(mds.stuff$eig)*100, 1)
-## now make a fancy looking plot that shows the MDS axes and the variation:
-mds.values <- mds.stuff$points
-mds.data <- data.frame(Sample=rownames(mds.values),
-                       X=mds.values[,1],
-                       Y=mds.values[,2],
-                       Status=data.imputed$hd)
-
-ggplot(data=mds.data, aes(x=X, y=Y, label=Sample)) +
-  geom_text(aes(color=Status)) +
-  theme_bw() +
-  xlab(paste("MDS1 - ", mds.var.per[1], "%", sep="")) +
-  ylab(paste("MDS2 - ", mds.var.per[2], "%", sep="")) +
-  ggtitle("MDS plot using (1 - Random Forest Proximities)")
-
-varImpPlot(model, main = "", pch = 20) 
-
-# example 2
-rfd <- read.delim("data/treedata.txt", header = T, sep = "\t")
-set.seed(222)                       # set seed
-
-id <- sample(2, nrow(rfd), replace = T, prob = c(.7, .3))
-train <- rfd[id == 1, ]
-test <- rfd[id == 2,]
-
-like_rf1 <- randomForest(LikeUser~., data = train)
-print(like_rf1) # inspect model
-
-attributes(like_rf1)
-
-ptrain1 <- predict(like_rf1, train) # extract prediction for training data
-head(ptrain1); head(train$LikeUser)         # inspect predictions
-
-confusionMatrix(ptrain1, train$LikeUser)  
-ptest1 <- predict(like_rf1, test)
-confusionMatrix(ptest1, test$LikeUser)
-
-plot(like_rf1, main = "")
-
-like_rf2 <- tuneRF(train[, !colnames(train)== "LikeUser"], 
-                   train[, colnames(train)== "LikeUser"], 
-                   stepFactor = 3, # for most values 3 appears to be optimal
-                   plot = T, ntreeTry = 200, trace = T, improve = .05)
-
-like_rf2 <- randomForest(LikeUser~., data = train, 
-                         ntree = 200, ntry = 6, importance= T, proximity = T)
-# inspect model
-print(like_rf2)   
-
-ptrain2 <- predict(like_rf2, train)
-confusionMatrix(ptrain2, train$LikeUser)
-
-ptest2 <- predict(like_rf2, test)
-confusionMatrix(ptest2, test$LikeUser)
-
-hist(treesize(like_rf2), main = "", col = "lightgray")
-
-varImpPlot(like_rf2, main = "", pch = 20) 
-
-importance(like_rf2)
-
-varUsed(like_rf2)
-
-partialPlot(like_rf2, train, Age)
-
-getTree(like_rf2, 1, labelVar = T)
-
-MDSplot(like_rf2, test$LikeUser)
+#data.imputed <- rfImpute(SUFLike ~ ., data = rfdata, iter=6)
 
 ###############################################################
-# EXAMPLE 3
-
-# set seed
-set.seed(333)
 # create initial model
-like.rf <- cforest(LikeUser ~ Age + Gender + Status,
-                   data = rfd, controls = cforest_unbiased(ntree = 50, mtry = 3))
-# determine importance of factors
-like.varimp <- varimp(like.rf, conditional = T)
-round(like.varimp, 3)
+rfmodel1 <- cforest(SUFLike ~ .,  data = rfdata, 
+                    controls = cforest_unbiased(ntree = 50, mtry = 3))
+# evaluate random forest (model diagnostics)
+rfmodel1_pred <- unlist(treeresponse(rfmodel1))[c(FALSE,TRUE)]
+somers2(rfmodel1_pred, as.numeric(rfdata$SUFLike) - 1)
+
+# extract variable importance based on mean decrease in accuracy
+varimp(rfmodel1, conditional = T) # conditional=T adjusts for correlations between predictors
 
 # plot result
-dotchart(sort(like.varimp), pch = 20, main = "Conditional importance of variables")
+dotchart(sort(rfmodel1_varimp), pch = 20, main = "Conditional importance of variables")
 
+# extract more robust variable importance (corrected towards class imbalance: differences in N)
+varimpAUC(rfmodel1)  
 
-# evaluate random forst
-like.rf.pred <- unlist(treeresponse(like.rf))[c(FALSE,TRUE)]
-somers2(like.rf.pred, as.numeric(rfd$LikeUser) - 1)
-
-
-cf1 <- cforest(LikeUser ~ . , data= rfd, control=cforest_unbiased(mtry=2,ntree=100)) # fit the random forest
-varimp(cf1) # get variable importance, based on mean decrease in accuracy
-
-# conditional=True, adjusts for correlations between predict
-varimp(cf1, conditional=TRUE) 
-
-varimpAUC(cf1)  # more robust towards class imbalance.
-
+# plot the more robust variable importance
 par(mar = c(5, 8, 4, 2) + 0.1)
-plot(y = 1:length(varimpAUC(cf1)), x = varimpAUC(cf1)[order(varimpAUC(cf1))], 
+plot(y = 1:length(varimpAUC(rfmodel1)), x = varimpAUC(rfmodel1)[order(varimpAUC(rfmodel1))], 
      axes = F, ann = F, pch = 20, xlim = c(-0.01, 0.2), main = "Predictor Importance")
 axis(1, at = seq(-0.01, 0.2, 0.05), seq(-0.01, 0.2, 0.05))
-axis(2, at = 1:length(varimpAUC(cf1)), names(varimpAUC(cf1))[order(varimpAUC(cf1))], las = 2)
+axis(2, at = 1:length(varimpAUC(rfmodel1)), names(varimpAUC(rfmodel1))[order(varimpAUC(rfmodel1))], las = 2)
 grid()
 box()
 par(mar = c(5, 4, 4, 2) + 0.1)
 
 ###############################################################
+# an alternative way to caluculate random forests which 
+# allows us to use different diagnostics and pruning techniques
+# create random forest model using randomForest function
+rfmodel2 <- randomForest(SUFLike ~ ., data=rfdata, proximity=TRUE)
+# inspect data
+rfmodel2 
+
+# extract error rates to see if ntree (number of trees) can be reduced
+# lower number of trees makes the computation much quicker
+oob.error.data <- data.frame(
+  Trees=rep(1:nrow(rfmodel2$err.rate), times=3),
+  Type=rep(c("OOB", "no", "yes"), each=nrow(rfmodel2$err.rate)),
+  Error=c(rfmodel2$err.rate[,"OOB"],
+          rfmodel2$err.rate[,"no"],
+          rfmodel2$err.rate[,"yes"]))
+# plot error rates
+ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
+  geom_line(aes(color=Type)) 
+
+# 50 trees are enough! more are not neccessary given the visualization)
+
+# check what mtry is optimal
+tuneRF(rfdata[, !colnames(rfdata)== "SUFLike"],
+       rfdata[, colnames(rfdata)== "SUFLike"],
+       stepFactor = 2, # 2 has the lowest value to be optimal
+       plot = T, ntreeTry = 50, trace = T, improve = .05)
+
+# create a new model with fewer trees and that takes 2 variables at a time
+rfmodel3 <- randomForest(SUFLike ~ ., data=rfdata, ntree=50, mtry = 2, proximity=TRUE)
+# inspect model
+rfmodel3
+
+# save what the model predicted in a new variable
+rfdata$Prediction <- predict(rfmodel3, rfdata) 
+# create confusion matrix to check accuracy
+confusionMatrix(rfdata$Prediction, rfdata$SUFLike)  
+
+# visualize optimized random forest model
+# plot variable importance
+varImpPlot(rfmodel3, main = "", pch = 20) 
+
+# number of nodes in the trees
+hist(treesize(rfmodel3), main = "", col = "lightgray")
+
+# extract importance of individual variables
+partialPlot(rfmodel3, rfdata, Age)
+
+# extract a single tree - not really neccessary
+# just to show how it is done (remove # to activate)
+#getTree(rfmodel3, 1, labelVar = T)
+
+# check how good the model separates SUFLike users from non-SUFLike users 
+# takes a long time to compute (remove # to activate)
+#MDSplot(rfmodel4, rfdata$SUFLike)
+
+###############################################################
 #                        BORUTA
-# load data
-borutadata <- read.delim("data/treedata.txt", header = T, sep = "\t")
+# create Boruta data
+borutadata <- read.delim("https://raw.githubusercontent.com/MartinSchweinberger/coedlss2019materials/master/datatables/reallydata.txt", header = T, sep = "\t")
+
+# inspect Boruta data
 head(borutadata)
 
 # initial run
-boruta1 <- Boruta(LikeUser~.,data=borutadata)
+boruta1 <- Boruta(SUFLike~.,data=borutadata)
 print(boruta1)
 
 getConfirmedFormula(boruta1)
@@ -537,5 +472,5 @@ mtext("Importance", 2, line = 2.5, at = 20, cex = 1, las = 0)
 par(mar = c(5, 4, 4, 2) + 0.1)
 
 ###############################################################
-#                      END PART 2
+#                      END PART 3
 ###############################################################
