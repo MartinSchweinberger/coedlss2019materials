@@ -23,33 +23,43 @@ options(scipen = 999)
 options(max.print=10000)
 # define image directory
 imageDirectory<-"images"
-# install libraries
-install.packages(c("Boruta", "caret", "cowplot", "dplyr", 
-                   "ggplot2", "Gmisc", "grid", "Hmisc", 
-                   "knitr", "party", "partykit", "randomForest", 
-                   "Rling"))
-library(partykit)              # activate partykit library
-library(dplyr)                 # activate dplyr library
-options(stringsAsFactors = T)  # set options: do not convert strings
+# install libraries (remove # to activate)
+#install.packages(c("partykit", "dplyr", "grid", "Gmisc", "Rling", "ggplot2", "cowplot", 
+#                   "randomForest", "party", "Hmisc", "Boruta", "caret"))
+# activate libraries
+library(partykit)              
+library(dplyr)  
+library(grid)
+library(Gmisc) 
+library(Rling) 
+library(ggplot2)       
+library(cowplot)       
+library(randomForest)
+library(party)
+library(Hmisc)
+library(Boruta) 
+# to install the caret library, it was neccessary to go through the installation 
+# process below - once caret is installed once, you do not need to go through 
+# these steps again
+# install caret library
+#source("https://bioconductor.org/biocLite.R"); biocLite(); library(Biobase)
+#install.packages("Biobase", repos=c("http://rstudio.org/_packages", "http://cran.rstudio.com", 
+#                                      "http://cran.rstudio.com/", dependencies=TRUE))
+#install.packages("dimRed", dependencies = TRUE)
+#install.packages('caret', dependencies = TRUE)
+# activate caret library
+library(caret) 
 ###############################################################
-#                  LOAD DATA
+#                  LOAD AND INSPECT DATA
 citdata <- read.delim("https://slcladal.github.io/data/treedata.txt", header = T, sep = "\t")
-set.seed(111)        # set.seed
-# apply bonferroni correction (1 minus alpha multiplied by n of predictors)
-control = ctree_control(mincriterion = 1-(.05*ncol(citdata)-1))
-# create initial conditional inference tree model
-citd.ctree <- ctree(LikeUser ~ Age + Gender + Status,
-                    data = citdata)
-plot(citd.ctree, gp = gpar(fontsize = 8)) # plot final ctree
+# inspect data
+head(citdata); str(citdata)
 
-###############################################################
-
-library(partykit)              # activate partykit library
-library(dplyr)                 # activate dplyr library
-options(stringsAsFactors = T)  # set options: do not convert strings
-set.seed(111)                  # set.seed
-citdata <- read.delim("https://slcladal.github.io/data/treedata.txt", header = T, sep = "\t")
-attach(citdata)
+# factorize variables (cit require factors instead of character vectors)
+fcts <- c("Age", "Gender", "Status", "LikeUser")
+citdata[fcts] <- lapply(citdata[fcts], factor)
+# inspect data
+str(citdata)
 
 # tabulate data
 table(citdata$LikeUser, citdata$Gender)
@@ -58,30 +68,57 @@ table(citdata$LikeUser, citdata$Age)
 
 table(citdata$LikeUser, citdata$Status)
 
-# Gini: men
+# set.seed (to store random numbers and thus make results reporducible)
+set.seed(20191202)        
+# apply bonferroni correction (1 minus alpha multiplied by n of predictors)
+control = ctree_control(mincriterion = 1-(.05*(ncol(citdata)-1)))
+# create initial conditional inference tree model
+citd.ctree <- ctree(LikeUser ~ Age + Gender + Status,
+                    data = citdata)
+plot(citd.ctree, gp = gpar(fontsize = 8)) # plot final ctree
+
+###############################################################
+#         HOW DO CITs DETERMINE WHEN TO SPLIT?
+#              EXPLANATION OF GINI VALUES
+#             SPLITS AT LOWEST GINI VALUE!
+# 1ST NODE
+# re-inspect gender distribution
+table(citdata$LikeUser, citdata$Gender)
+
+# calculate Gini for men
 gini_men <- 1-(42/(42+75))^2 - (75/(42+75))^2
-# Gini: women
+# calculate Gini for women
 gini_women <- 1-(91/(91+43))^2 - (43/(91+43))^2
-# Weighted Average of Gini: Gender
+# calculate weighted average of Gini for Gender
 gini_gender <- 42/(42+75)* gini_men +  91/(91+43) * gini_women
 gini_gender
 
+# re-inspect age distribution
+table(citdata$LikeUser, citdata$Age)
+
+# calculate Gini for age groups
 gini_young <- 1-(92/(92+34))^2 - (34/(92+34))^2  # Gini: young
 gini_old <- 1-(41/(41+84))^2 - (84/(41+84))^2    # Gini: old
-# Weighted Average of Gini: Gender
+# calculate weighted average of Gini for Age
 gini_age <- 92/(92+34)* gini_young +  41/(41+84) * gini_old
 gini_age
 
-### Status
+# re-inspect status distribution
+table(citdata$LikeUser, citdata$Status)
+
+# calculate Gini for status groups
 gini_high <- 1-(73/(33+73))^2 - (33/(33+73))^2   # Gini: high
 gini_low <- 1-(60/(60+85))^2 - (85/(60+85))^2    # Gini: low
-# Weighted Average of Gini: Status
+# calculate weighted average of Gini for Status
 gini_status <- 73/(33+73)* gini_high +  60/(60+85) * gini_low
 gini_status
 
-#activate libraries
-library(grid)
-library(Gmisc)
+# compare age, gender, and status ginis
+gini_gender; gini_age; gini_status
+
+# gini_age has lowest value: split by Age!
+
+# plot tree we have so far!
 grid.newpage()
 # set some parameters to use repeatedly
 leftx <- .25
@@ -100,41 +137,54 @@ gp <- gpar(fill = "lightgrey")
 connectGrob(rando, g1, "N")
 connectGrob(rando, g2, "N")
 
-### 2nd node: gender
+# 2ND NODE
+# split data according to first split (only young data for now)
 young <- citdata[citdata$Age == "15-40",]
+# inspect distribution
 tbyounggender <- table(young$LikeUser, young$Gender)
 tbyounggender
-# Gini: men
+
+# calculate Gini for Gender
+# calculate Gini for men
 gini_youngmen <- 1-(tbyounggender[2,2]/sum(tbyounggender[,2]))^2 - (tbyounggender[1,2]/sum(tbyounggender[,2]))^2
-# Gini: women
+# calculate Gini for women
 gini_youngwomen <- 1-(tbyounggender[2,1]/sum(tbyounggender[,1]))^2 - (tbyounggender[1,1]/sum(tbyounggender[,1]))^2
-# Weighted Average of Gini: Gender
+# # calculate weighted aAverage of Gini for Gender
 gini_younggender <- sum(tbyounggender[,2])/sum(tbyounggender)* gini_youngmen +  sum(tbyounggender[,1])/sum(tbyounggender) * gini_youngwomen
 gini_younggender
 
-### 2nd node: status
-young <- citdata[citdata$Age == "15-40",]
+# calculate Gini for Status
+# inspect distribution
 tbyoungstatus <- table(young$LikeUser, young$Status)
 tbyoungstatus
-# Gini: low
+
+# calculate Gini for low
 gini_younglow <- 1-(tbyoungstatus[2,2]/sum(tbyoungstatus[,2]))^2 - (tbyoungstatus[1,2]/sum(tbyoungstatus[,2]))^2
-# Gini: high
+# calculate Gini for high
 gini_younghigh <- 1-(tbyoungstatus[2,1]/sum(tbyoungstatus[,1]))^2 - (tbyoungstatus[1,1]/sum(tbyoungstatus[,1]))^2
-# Weighted Average of Gini: Gender
+# calculate weighted average of Gini for Status
 gini_youngstatus <- sum(tbyoungstatus[,2])/sum(tbyoungstatus)* gini_younglow +  sum(tbyoungstatus[,1])/sum(tbyoungstatus) * gini_younghigh
 gini_youngstatus
 
-### 3nd node: gender
+# compare ginis of gender and status
+gini_younggender; gini_youngstatus
+
+# gini_youngstatus has lowest value: split by Status!
+
+# 3RD NODE
+# split data according to first and second split (young and high status data)
 younghigh <- citdata %>%
   filter(Age == "15-40") %>%
   filter(Status == "high")
+# inspect gender distribution
 tbyounghighgender <- table(younghigh$LikeUser, younghigh$Gender)
 tbyounghighgender
-# Gini: men
+
+# calculate Gini for men
 gini_younghighmen <- 1-(tbyounghighgender[2,2]/sum(tbyounghighgender[,2]))^2 - (tbyounghighgender[1,2]/sum(tbyounghighgender[,2]))^2
-# Gini: women
+# calculate Gini for women
 gini_younghighwomen <- 1-(tbyounghighgender[2,1]/sum(tbyounghighgender[,1]))^2 - (tbyounghighgender[1,1]/sum(tbyounghighgender[,1]))^2
-# Weighted Average of Gini: Gender
+# calculate weighted average of Gini for Gender
 gini_younghighgender <- sum(tbyounghighgender[,2])/sum(tbyounghighgender)* gini_younghighmen +  sum(tbyounghighgender[,1])/sum(tbyounghighgender) * gini_younghighwomen
 gini_younghighgender
 
@@ -185,10 +235,6 @@ gini_oldgender         # compare with younghigh
 
 ###############################################################
 #              CONDITIONAL INFERENCE TREE
-#install.packages(Rling)       # install Rling library (remove # to activate)
-library(Rling)                 # activate Rling library
-library(partykit)              # activate partykit library
-library(dplyr)                 # activate dplyr library
 options(stringsAsFactors = T)  # set options: do not convert strings
 options(scipen = 999)          # set options: supress math. notation
 options(max.prAmplified=10000) # set options
@@ -211,8 +257,7 @@ ptb <- table(predict(citd.ctree), citdata$LikeUser)
 # determine baseline
 (table(citdata$LikeUser)[[2]]/sum(table(citdata$LikeUser)))*100
 
-# activate library for tabulating
-library(dplyr)                 
+# load new data
 citdata2 <- read.delim("data/numerictreedata.txt", header = T, sep = "\t")
 citdata2 <- citdata2 %>%
   arrange(Age)
@@ -242,17 +287,14 @@ citdata3 <- data.frame(Age, LikeUser)
 1-(0/(0+1))^2 - (1/(0+1))^2
 5/6 * 0.32 +  1/6 * 0.0
 
-library(dplyr)                
+               
 AgeSplit <- c(((15+22)/2), ((22+27)/2), ((27+37)/2), ((37+42)/2), ((42+63)/2))
 Gini <- c(0.4, 0.5,0.444, 0.41, 0.267)
 citdata3 <- data.frame(AgeSplit, Gini)
 
 ###############################################################
 #                   RANDOM FORESTS
-library(ggplot2)       
-library(cowplot)       
-library(randomForest)  
-library(dplyr)            
+           
 citdata <- read.delim("data/treedata.txt", header = T, sep = "\t")
 citdata <- head(citdata)
 citdata$ID <- 1:nrow(citdata)
@@ -386,8 +428,6 @@ ggplot(data=mds.data, aes(x=X, y=Y, label=Sample)) +
 varImpPlot(model, main = "", pch = 20) 
 
 # example 2
-library(dplyr)         # activate dplyr library
-library(randomForest)  # activate randomForest library
 rfd <- read.delim("data/treedata.txt", header = T, sep = "\t")
 set.seed(222)                       # set seed
 
@@ -400,14 +440,6 @@ print(like_rf1) # inspect model
 
 attributes(like_rf1)
 
-# install package
-#source("https://bioconductor.org/biocLite.R"); biocLite(); library(Biobase)
-#install.packages("Biobase", repos=c("http://rstudio.org/_packages", "http://cran.rstudio.com", 
-#                                      "http://cran.rstudio.com/", dependencies=TRUE))
-#install.packages("dimRed", dependencies = TRUE)
-#install.packages('caret', dependencies = TRUE)
-# load caret library
-library(caret) # because initially caret did not work, the libraries above had to be installed
 ptrain1 <- predict(like_rf1, train) # extract prediction for training data
 head(ptrain1); head(train$LikeUser)         # inspect predictions
 
@@ -449,7 +481,7 @@ MDSplot(like_rf2, test$LikeUser)
 
 ###############################################################
 # EXAMPLE 3
-library(party)
+
 # set seed
 set.seed(333)
 # create initial model
@@ -462,14 +494,12 @@ round(like.varimp, 3)
 # plot result
 dotchart(sort(like.varimp), pch = 20, main = "Conditional importance of variables")
 
-# load library
-library(Hmisc)
+
 # evaluate random forst
 like.rf.pred <- unlist(treeresponse(like.rf))[c(FALSE,TRUE)]
 somers2(like.rf.pred, as.numeric(rfd$LikeUser) - 1)
 
-# load library
-library(party)
+
 cf1 <- cforest(LikeUser ~ . , data= rfd, control=cforest_unbiased(mtry=2,ntree=100)) # fit the random forest
 varimp(cf1) # get variable importance, based on mean decrease in accuracy
 
@@ -489,11 +519,6 @@ par(mar = c(5, 4, 4, 2) + 0.1)
 
 ###############################################################
 #                        BORUTA
-#install.packages(Boruta)       # install Boruta library (remove # to activate)
-library(Boruta)                # activate Boruta library
-options(stringsAsFactors = T)  # set options: do not convert strings
-options(scipen = 999)          # set options: supress math. notation
-options(max.prAmplified=10000) # set options
 # load data
 borutadata <- read.delim("data/treedata.txt", header = T, sep = "\t")
 head(borutadata)
