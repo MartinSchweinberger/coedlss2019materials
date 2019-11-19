@@ -55,16 +55,19 @@ library(effects)
 #install.packages('caret', dependencies = TRUE)
 # activate caret library
 library(caret) 
+# load functions
+source("https://slcladal.github.io/rscripts/blr.summary.r")
 ###############################################################
 #                        BORUTA
-# create Boruta data
-data <- read.table("https://slcladal.github.io/data/mblrdata.txt", 
-                   comment.char = "", quote = "", sep = "\t",  header = T)
+# load Boruta data
+data <- read.table("https://raw.githubusercontent.com/MartinSchweinberger/coedlss2019materials/master/datatables/suflikedata.txt", 
+                   comment.char = "", quote = "", sep = "\t",  header = T) %>%
+  na.omit()
 # inspect data
-head(data); str(data)
+head(data); str(data); nrow(data)
 
 # factorize variables (boruta - like rf - require factors instead of character vectors)
-fcts <- c("ID", "Gender", "Age", "ConversationType", "Priming", "SUFlike")
+fcts <- c("ID", "Gender", "Age", "ConversationType", "SocioeconomicStatus", "SUFlike")
 data[fcts] <- lapply(data[fcts], factor)
 # inspect data
 str(data)
@@ -149,49 +152,49 @@ ggplot(p3d, aes(ConversationType, SUFlike)) +
   ylim(-5, 100) +
   labs(x = "Conversation type", y = "Speech-unit final LIKE (%)")
 
-# create data for plotting: Priming
+# create data for plotting: SocioeconomicStatus
 p4d <- data %>%
-  dplyr::select(ID, SUFlike, Priming) %>%
+  dplyr::select(ID, SUFlike, SocioeconomicStatus) %>%
   dplyr::mutate(SUFlike = SUFlike*100) %>%
-  group_by(ID, Priming) %>%
+  group_by(ID, SocioeconomicStatus) %>%
   dplyr::summarize(SUFlike=mean(SUFlike))
 # start plot
-ggplot(p4d, aes(Priming, SUFlike)) +
+ggplot(p4d, aes(SocioeconomicStatus, SUFlike)) +
   geom_boxplot(width=0.5, fill="gray80", color = "gray20") +
   scale_fill_manual(values=rep("grey90", 2)) + 
   theme_set(theme_bw(base_size = 10)) +
   ylim(-5, 100) +
-  labs(x = "Priming", y = "Speech-unit final LIKE (%)")
+  labs(x = "Socioeconomic Status", y = "Speech-unit final LIKE (%)")
 
-# create data for plotting: Priming*Gender
+# create data for plotting: SocioeconomicStatus*Gender
 p5d <- data %>%
-  dplyr::select(ID, SUFlike, Priming, Gender) %>%
+  dplyr::select(ID, SUFlike, SocioeconomicStatus, Gender) %>%
   dplyr::mutate(SUFlike = SUFlike*100) %>%
-  group_by(ID, Priming, Gender) %>%
+  group_by(ID, SocioeconomicStatus, Gender) %>%
   dplyr::summarize(SUFlike=mean(SUFlike))
 # start plot
-ggplot(p5d, aes(Priming, SUFlike, fill = Gender)) +
+ggplot(p5d, aes(SocioeconomicStatus, SUFlike, fill = Gender)) +
   geom_boxplot(width=0.5, position=position_dodge(0.9)) +
   scale_fill_manual(values=rep(c("grey40", "Gray80"),2)) + 
   theme_set(theme_bw(base_size = 10)) +
   theme(legend.position="top") + 
   ylim(-5, 100) +
-  labs(x = "Priming", y = "Speech-unit final LIKE (%)")
+  labs(x = "SocioeconomicStatus", y = "Speech-unit final LIKE (%)")
 
-# create data for plotting: Priming*ConversationType
+# create data for plotting: SocioeconomicStatus*ConversationType
 p6d <- data %>%
-  dplyr::select(ID, SUFlike, Priming, ConversationType) %>%
+  dplyr::select(ID, SUFlike, SocioeconomicStatus, ConversationType) %>%
   dplyr::mutate(SUFlike = SUFlike*100) %>%
-  group_by(ID, Priming, ConversationType) %>%
+  group_by(ID, SocioeconomicStatus, ConversationType) %>%
   dplyr::summarize(SUFlike=mean(SUFlike))
 # start plot
-ggplot(p6d, aes(Priming, SUFlike, fill = ConversationType)) +
+ggplot(p6d, aes(SocioeconomicStatus, SUFlike, fill = ConversationType)) +
   geom_boxplot(width=0.5, position=position_dodge(0.9)) +
   scale_fill_manual(values=rep(c("grey40", "Gray80"),2)) + 
   theme_set(theme_bw(base_size = 10)) +
   theme(legend.position="top") + 
   ylim(-5, 100) +
-  labs(x = "Priming", y = "Speech-unit final LIKE (%)") 
+  labs(x = "SocioeconomicStatus", y = "Speech-unit final LIKE (%)") 
 
 # create data for plotting: Gender*ConversationType
 p7d <- data %>%
@@ -201,6 +204,23 @@ p7d <- data %>%
   dplyr::summarize(SUFlike=mean(SUFlike))
 # start plot
 ggplot(p7d, aes(Gender, SUFlike, fill = ConversationType)) +
+  geom_boxplot(width=0.5, position=position_dodge(0.9)) +
+  scale_fill_manual(values=rep(c("grey40", "Gray80"),2)) + 
+  theme_set(theme_bw(base_size = 10)) +
+  theme(legend.position="top") + 
+  ylim(-5, 100) +
+  labs(x = "Gender", y = "Speech-unit final LIKE (%)")
+
+
+# create data for plotting: Gender*ConversationType
+p8d <- data %>%
+  dplyr::select(ID, SUFlike, SocioeconomicStatus, Gender, ConversationType) %>%
+  dplyr::mutate(SUFlike = SUFlike*100) %>%
+  group_by(ID, Gender, ConversationType, SocioeconomicStatus) %>%
+  dplyr::summarize(SUFlike=mean(SUFlike))
+# start plot
+ggplot(p8d, aes(Gender, SUFlike, fill = ConversationType)) +
+  facet_wrap(~ SocioeconomicStatus) +
   geom_boxplot(width=0.5, position=position_dodge(0.9)) +
   scale_fill_manual(values=rep(c("grey40", "Gray80"),2)) + 
   theme_set(theme_bw(base_size = 10)) +
@@ -236,73 +256,73 @@ pchisq(as.numeric(null.id), df=1, lower.tail=F)
 # add optimizer (prevents non-conversion and improves model fit process)
 m0.glmer <- glmer(SUFlike ~ 1+ (1|ID), family = binomial, data = data, control=glmerControl(optimizer="bobyqa"))
 
-# add Priming
-ifelse(min(ftable(data$Priming, data$SUFlike)) == 0, "incomplete information", "okay")
-m1.glm <- update(m0.glm, .~.+Priming)
-m1.glmer <- update(m0.glmer, .~.+Priming)
-anova(m1.glmer, m0.glmer, test = "Chi")      # SIG (p<.0.00000000000000022 ***) 
-Anova(m1.glmer, test = "Chi")                # SIG (p<.0.00000000000000022 ***) 
+# add SocioeconomicStatus
+ifelse(min(ftable(data$SocioeconomicStatus, data$SUFlike)) == 0, "incomplete information", "okay")
+m1.glm <- update(m0.glm, .~.+SocioeconomicStatus)
+m1.glmer <- update(m0.glmer, .~.+SocioeconomicStatus)
+anova(m1.glmer, m0.glmer, test = "Chi")                          # SIG (p<.0.00000000000000022 ***) 
+Anova(m1.glmer, test = "Chi")                                    # SIG (p<.0.00000000000000022 ***) 
 
 # add Gender
 ifelse(min(ftable(data$Gender, data$SUFlike)) == 0, "incomplete information", "okay")
 m2.glm <- update(m1.glm, .~.+Gender)
 ifelse(max(vif(m2.glm)) <= 3,  "VIFs okay", "VIFs unacceptable") # VIFs ok
 m2.glmer <- update(m1.glmer, .~.+Gender)
-anova(m2.glmer, m1.glmer, test = "Chi")      # SIG (p<.0.00000000000000022 ***) 
-Anova(m2.glmer, test = "Chi")                # SIG (p<.0.00000000000000022 ***)
+anova(m2.glmer, m1.glmer, test = "Chi")                          # SIG (p<.0.00000000000000022 ***) 
+Anova(m2.glmer, test = "Chi")                                    # SIG (p<.0.00000000000000022 ***)
 
 # add Age
 ifelse(min(ftable(data$Age, data$SUFlike)) == 0, "incomplete information", "okay")
 m3.glm <- update(m2.glm, .~.+Age)
 ifelse(max(vif(m3.glm)) <= 3,  "VIFs okay", "VIFs unacceptable") # VIFs ok
 m3.glmer <- update(m2.glmer, .~.+Age)
-anova(m3.glmer, m2.glmer, test = "Chi")      # not sig (p=0.7635) 
+anova(m3.glmer, m2.glmer, test = "Chi")                          # not sig (p=0.7635) 
 
 # add ConversationType
 ifelse(min(ftable(data$ConversationType, data$SUFlike)) == 0, "incomplete information", "okay")
 m4.glm <- update(m2.glm, .~.+ConversationType)
 ifelse(max(vif(m4.glm)) <= 3,  "VIFs okay", "VIFs unacceptable") # VIFs ok
 m4.glmer <- update(m2.glmer, .~.+ConversationType)
-anova(m4.glmer, m2.glmer, test = "Chi")      # SIG (p=0.0000000003838 ***) 
-Anova(m4.glmer, test = "Chi")                # SIG (p=0.0000000000287 ***)
+anova(m4.glmer, m2.glmer, test = "Chi")                          # SIG (p=0.0000000003838 ***) 
+Anova(m4.glmer, test = "Chi")                                    # SIG (p=0.0000000000287 ***)
 
 ###########################################################################
 # find all 2-way interactions
 colnames(data)
 # define variables included in interactions
-vars <- c("Priming", "Gender", "Age", "ConversationType")
+vars <- c("SocioeconomicStatus", "Gender", "Age", "ConversationType")
 intac <- t(combn(vars, 2))
 intac
 
-# add Priming*Gender
-ifelse(min(ftable(data$Priming, data$Gender, data$SUFlike)) == 0, "incomplete information", "okay")
-m5.glm <- update(m4.glm, .~.+Priming*Gender)
+# add SocioeconomicStatus*Gender
+ifelse(min(ftable(data$SocioeconomicStatus, data$Gender, data$SUFlike)) == 0, "incomplete information", "okay")
+m5.glm <- update(m4.glm, .~.+SocioeconomicStatus*Gender)
 ifelse(max(vif(m5.glm)) <= 10,  "VIFs okay", "high VIFs") # VIFs ok
-m5.glmer <- update(m4.glmer, .~.+Priming*Gender)
-anova(m5.glmer, m4.glmer, test = "Chi")      # SIG (p=0.000000000005307 ***) 
-Anova(m5.glmer, test = "Chi")                # SIG (p=0.000000000004814 ***)
+m5.glmer <- update(m4.glmer, .~.+SocioeconomicStatus*Gender)
+anova(m5.glmer, m4.glmer, test = "Chi")                   # SIG (p=0.000000000005307 ***) 
+Anova(m5.glmer, test = "Chi")                             # SIG (p=0.000000000004814 ***)
 
-# add Priming*Age
-ifelse(min(ftable(data$Priming, data$Age, data$SUFlike)) == 0, "incomplete information", "okay")
-m6.glm <- update(m5.glm, .~.+Priming*Age)
+# add SocioeconomicStatus*Age
+ifelse(min(ftable(data$SocioeconomicStatus, data$Age, data$SUFlike)) == 0, "incomplete information", "okay")
+m6.glm <- update(m5.glm, .~.+SocioeconomicStatus*Age)
 ifelse(max(vif(m6.glm)) <= 10,  "VIFs okay", "high VIFs") # VIFs ok
-m6.glmer <- update(m5.glmer, .~.+Priming*Age)
-anova(m6.glmer, m5.glmer, test = "Chi")      # not sig (p=0.6988) 
+m6.glmer <- update(m5.glmer, .~.+SocioeconomicStatus*Age)
+anova(m6.glmer, m5.glmer, test = "Chi")                   # not sig (p=0.6988) 
 
-# add Priming*ConversationType
-ifelse(min(ftable(data$Priming, data$ConversationType, data$SUFlike)) == 0, "incomplete information", "okay")
-m7.glm <- update(m5.glm, .~.+Priming*ConversationType)
+# add SocioeconomicStatus*ConversationType
+ifelse(min(ftable(data$SocioeconomicStatus, data$ConversationType, data$SUFlike)) == 0, "incomplete information", "okay")
+m7.glm <- update(m5.glm, .~.+SocioeconomicStatus*ConversationType)
 ifelse(max(vif(m7.glm)) <= 10,  "VIFs okay", "high VIFs") # VIFs ok
-m7.glmer <- update(m5.glmer, .~.+Priming*ConversationType)
-anova(m7.glmer, m5.glmer, test = "Chi")      # SIG (p=0.007764 **) 
-Anova(m7.glmer, test = "Chi")                # SIG (p=0.007662 **)
+m7.glmer <- update(m5.glmer, .~.+SocioeconomicStatus*ConversationType)
+anova(m7.glmer, m5.glmer, test = "Chi")                   # SIG (p=0.007764 **) 
+Anova(m7.glmer, test = "Chi")                             # SIG (p=0.007662 **)
 
 # add Gender*Age
 ifelse(min(ftable(data$Gender, data$Age, data$SUFlike)) == 0, "incomplete information", "okay")
 m8.glm <- update(m7.glm, .~.+Gender*Age)
 ifelse(max(vif(m8.glm)) <= 10,  "VIFs okay", "high VIFs") # VIFs ok
 m8.glmer <- update(m7.glmer, .~.+Gender*Age)
-anova(m8.glmer, m7.glmer, test = "Chi")      # not sig (p=0.7971) 
+anova(m8.glmer, m7.glmer, test = "Chi")                   # not sig (p=0.7971) 
 
 # add Gender*ConversationType
 ifelse(min(ftable(data$Gender, data$ConversationType, data$SUFlike)) == 0, "incomplete information", "okay")
@@ -310,8 +330,8 @@ m9.glm <- update(m7.glm, .~.+Gender*ConversationType)
 ifelse(max(vif(m9.glm)) <= 10,  "VIFs okay", "high VIFs") # VIFs ok
 vif(m9.glm)                                               # not excessive!
 m9.glmer <- update(m7.glmer, .~.+Gender*ConversationType)
-anova(m9.glmer, m7.glmer, test = "Chi")      # SIG (p=0.0007925 ***) 
-Anova(m9.glmer, test = "Chi")                # SIG (p=0.001061 **)
+anova(m9.glmer, m7.glmer, test = "Chi")                   # SIG (p=0.0007925 ***) 
+Anova(m9.glmer, test = "Chi")                             # SIG (p=0.001061 **)
 
 # add Age*ConversationType
 ifelse(min(ftable(data$Age, data$ConversationType, data$SUFlike)) == 0, "incomplete information", "okay")
@@ -319,21 +339,78 @@ m10.glm <- update(m9.glm, .~.+Age*ConversationType)
 ifelse(max(vif(m10.glm)) <= 10,  "VIFs okay", "high VIFs") # VIFs ok
 vif(m10.glm)                                               # not excessive!
 m10.glmer <- update(m9.glmer, .~.+Age*ConversationType)
-anova(m10.glmer, m9.glmer, test = "Chi")      # not sig (p=0.6335)
+anova(m10.glmer, m9.glmer, test = "Chi")                   # not sig (p=0.6335)
 
-# final model = m9.glmer
+###########################################################################
+# find all 3-way interactions
+colnames(data)
+# define variables included in interactions
+vars <- c("SocioeconomicStatus", "Gender", "Age", "ConversationType")
+intac <- t(combn(vars, 3))
+intac
+
+# add SocioeconomicStatus*Gender*Age
+ifelse(min(ftable(data$SocioeconomicStatus, data$Gender, data$Age, data$SUFlike)) == 0, "incomplete information", "okay")
+m11.glm <- update(m9.glm, .~.+SocioeconomicStatus*Gender*Age)
+ifelse(max(vif(m11.glm)) <= 10,  "VIFs okay", "high VIFs") # high VIFs
+vif(m11.glm)                                               # problematic but higher order interactions will cause high vifs: no proper solution yet!
+m11.glmer <- update(m9.glmer, .~.+SocioeconomicStatus*Gender*Age)
+# boundary (singular) fit: see ?isSingular 
+# meaning: overfitted model
+# advice: delete the most complex part of the random effect structure or
+# switch to fixed effects model if random effects showed little impact in Boruta
+anova(m11.glmer, m9.glmer, test = "Chi")                  # not sig (p=0.8027)
+
+# add SocioeconomicStatus*Gender*ConversationType
+ifelse(min(ftable(data$SocioeconomicStatus, data$Gender, data$ConversationType, data$SUFlike)) == 0, "incomplete information", "okay")
+m12.glm <- update(m9.glm, .~.+SocioeconomicStatus*Gender*ConversationType)
+ifelse(max(vif(m12.glm)) <= 10,  "VIFs okay", "high VIFs") # high VIFs 
+vif(m12.glm)                                               # problematic but higher order interactions will cause high vifs: no proper solution yet!
+m12.glmer <- update(m9.glmer, .~.+SocioeconomicStatus*Gender*ConversationType)
+# boundary (singular) fit: see ?isSingular 
+# meaning: overfitted model
+# advice: delete the most complex part of the random effect structure or
+# switch to fixed effects model if random effects showed little impact in Boruta
+anova(m12.glmer, m9.glmer, test = "Chi")                   # SIG! (p=0.00002372 ***)
+anova(m12.glm, m9.glm, test = "Chi")                       # SIG! (p=0.00002372 ***)
+Anova(m12.glm, test = "LR")                                # SIG (p=0.001061 **)
+
+# HAHA!!! same values - why might this be? ;)
+
+# add SocioeconomicStatus*Age*ConversationType
+ifelse(min(ftable(data$SocioeconomicStatus, data$Age, data$ConversationType, data$SUFlike)) == 0, "incomplete information", "okay")
+m13.glm <- update(m12.glm, .~.+SocioeconomicStatus*Age*ConversationType)
+ifelse(max(vif(m13.glm)) <= 10,  "VIFs okay", "high VIFs") # high VIFs
+vif(m13.glm)                                               # problematic but higher order interactions will cause high vifs: no proper solution yet!
+m13.glmer <- update(m12.glmer, .~.+SocioeconomicStatus*Age*ConversationType)
+# boundary (singular) fit: see ?isSingular 
+anova(m13.glmer, m12.glmer, test = "Chi")                  # not sig (p=0.9604)
+
+# add Gender*Age*ConversationType
+ifelse(min(ftable(data$Gender, data$Age, data$ConversationType, data$SUFlike)) == 0, "incomplete information", "okay")
+m14.glm <- update(m12.glm, .~.+Gender*Age*ConversationType)
+ifelse(max(vif(m14.glm)) <= 10,  "VIFs okay", "high VIFs") # high VIFs
+vif(m14.glm)                                               # not excessive!
+m14.glmer <- update(m12.glmer, .~.+Gender*Age*ConversationType)
+# boundary (singular) fit: see ?isSingular 
+anova(m14.glmer, m12.glmer, test = "Chi")      # not sig (p=0.963)
+
+###########################################################################
+# final model = m12.glm (we use the fixed effecst model because of singular fit)
 # diagnostic plots
-plot(m9.glmer, pch = 20, col = "black", lty = "dotted", ylab = "Pearson's residuals",
-     xlab = "Fitted values")
+par(mfrow=c(1, 4)) # plot window: 1plot/row and 4 plots/column
+plot(m12.glm)
+par(mfrow=c(1, 1)) # plot window: 1plot/row and 1 plots/column
+
 
 # diagnostic plot: examining residuals (Pinheiro & Bates 2000:175)
-plot(m9.glmer, ID ~ resid(.), abline = 0 , cex = .5)
+plot(m12.glmer, ID ~ resid(.), abline = 0 , cex = .5)
 
 ##########################################
 #           VISUALIZE EFFECTS
 ##########################################
 # create effect plot for comparison purposes
-plot(predictorEffects(m9.glmer)) 
+plot(predictorEffects(m12.glm)) 
 
 # create data frame with effects
 eff_cf <- predictorEffects(m9.glmer)
@@ -375,8 +452,6 @@ ggplot(tbd, aes(IndicatedErrors, fit, color = Type)) +
   labs(x = "Indicated errors", y = "Number of errors") +
   ggsave(file = paste(imageDirectory,"Effects_quasiPoisson.png",sep="/"), 
          width = 20,  height = 10, units = c("cm"),  dpi = 320)
-##########################################
-
 
 ###############################################################
 #                      END PART 4

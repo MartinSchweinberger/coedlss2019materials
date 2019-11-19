@@ -38,7 +38,7 @@ library(sjPlot)
 library(visreg)
 # load functions
 source("https://slcladal.github.io/rscripts/multiplot_ggplot2.R")
-source("https://slcladal.github.io/rscripts/blr.summary.R")
+source("https://slcladal.github.io/rscripts/blr.summary.r")
 source("https://slcladal.github.io/rscripts/multiplot_ggplot2.r")
 source("https://slcladal.github.io/rscripts/slr.summary.tb.r")
 source("https://slcladal.github.io/rscripts/multiplot_ggplot2.r")
