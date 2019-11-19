@@ -1,3 +1,4 @@
+ID	Gender	Age	ConversationType	SocioeconomicStatus	SUFlike
 S1A-001$A	Men	Old	SameGender	MiddleClass	1
 S1A-001$A	Men	Old	SameGender	WorkingClass	0
 S1A-001$A	Men	Old	SameGender	WorkingClass	0
