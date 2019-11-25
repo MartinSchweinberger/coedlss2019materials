@@ -134,16 +134,4 @@ Books about statistics that I can recommend (for advanced)
 - @baayen2008analyzing, @agresti2011categorical, @pinheiro2000mixedmodels, @zuur2009mixedmodels
 
 
-## Slide with R Output
-
-```{r cars, echo = TRUE}
-summary(cars)
-```
-
-## Slide with Plot
-
-```{r pressure}
-plot(pressure)
-```
-
 ## References
