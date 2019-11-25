@@ -175,18 +175,7 @@ tboldstatus
 
 chisq.test(tboldstatus) # sig difference: data can be split!
 
-# calculate Gini for low
-gini_oldlow <- 1-(tboldstatus[2,2]/sum(tboldstatus[,2]))^2 - (tboldstatus[1,2]/sum(tboldstatus[,2]))^2
-# calculate Gini for high
-gini_oldhigh <- 1-(tboldstatus[2,1]/sum(tboldstatus[,1]))^2 - (tboldstatus[1,1]/sum(tboldstatus[,1]))^2
-# calculate weighted average of Gini for Status
-gini_oldstatus <- sum(tboldstatus[,2])/sum(tboldstatus)* gini_oldlow +  sum(tboldstatus[,1])/sum(tboldstatus) * gini_oldhigh
-gini_oldstatus
-
-# compare ginis of gender and status
-gini_oldgender; gini_oldstatus
-
-# gini_oldgender has lowest value: split by Gender!
+# since result is not significant, we split by Gender!
 
 # 3RD NODE
 # split data according to first split (only old data for now)
@@ -219,34 +208,12 @@ tbyounggender
 
 chisq.test(tbyounggender) # no sig difference: do not split!
 
-# calculate Gini for Gender
-# calculate Gini for men
-gini_youngmen <- 1-(tbyounggender[2,2]/sum(tbyounggender[,2]))^2 - (tbyounggender[1,2]/sum(tbyounggender[,2]))^2
-# calculate Gini for women
-gini_youngwomen <- 1-(tbyounggender[2,1]/sum(tbyounggender[,1]))^2 - (tbyounggender[1,1]/sum(tbyounggender[,1]))^2
-# # calculate weighted aAverage of Gini for Gender
-gini_younggender <- sum(tbyounggender[,2])/sum(tbyounggender)* gini_youngmen +  sum(tbyounggender[,1])/sum(tbyounggender) * gini_youngwomen
-gini_younggender
-
 # calculate Gini for Status
 # inspect distribution
 tbyoungstatus <- table(young$LikeUser, young$Status)
 tbyoungstatus
 
 chisq.test(tbyoungstatus) # sig difference: split!
-
-# calculate Gini for low
-gini_younglow <- 1-(tbyoungstatus[2,2]/sum(tbyoungstatus[,2]))^2 - (tbyoungstatus[1,2]/sum(tbyoungstatus[,2]))^2
-# calculate Gini for high
-gini_younghigh <- 1-(tbyoungstatus[2,1]/sum(tbyoungstatus[,1]))^2 - (tbyoungstatus[1,1]/sum(tbyoungstatus[,1]))^2
-# calculate weighted average of Gini for Status
-gini_youngstatus <- sum(tbyoungstatus[,2])/sum(tbyoungstatus)* gini_younglow +  sum(tbyoungstatus[,1])/sum(tbyoungstatus) * gini_younghigh
-gini_youngstatus
-
-# compare ginis of gender and status
-gini_younggender; gini_youngstatus
-
-# gini_youngstatus has lowest value: split by Status!
 
 # 6TH NODE
 # split data according to first and second split (young and low status data)
@@ -281,13 +248,8 @@ citd.ctree <- ctree(LikeUser ~ Age + Gender + Status, data = citdata)
 plot(citd.ctree, gp = gpar(fontsize = 8)) # plot final ctree
 
 # test prediction accuracy
-ptb <- table(predict(citd.ctree), citdata$LikeUser)
-(((ptb[1]+ptb[4])+(ptb[2]+ptb[3]))/sum(table(predict(citd.ctree), citdata$LikeUser)))*100
-# inspect results
-ptb
-
-# determine baseline
-(table(citdata$LikeUser)[[2]]/sum(table(citdata$LikeUser)))*100
+citprediction <- predict(citd.ctree)
+confusionMatrix(citprediction, citdata$LikeUser)
 
 ###############################################################
 #              CIT: SPLITS IN NUMERIC VARIABLES        
@@ -372,21 +334,11 @@ rfmodel1_varimp <- varimp(rfmodel1, conditional = T) # conditional=T adjusts for
 # show variable importance
 rfmodel1_varimp
 
-# plot result
-dotchart(sort(rfmodel1_varimp), pch = 20, main = "Conditional importance of variables")
-
 # extract more robust variable importance (corrected towards class imbalance: differences in N)
-varimpAUC(rfmodel1)  
+rfmodel1_robustvarimp <- varimpAUC(rfmodel1)  
 
-# plot the more robust variable importance
-par(mar = c(5, 8, 4, 2) + 0.1)
-plot(y = 1:length(varimpAUC(rfmodel1)), x = varimpAUC(rfmodel1)[order(varimpAUC(rfmodel1))], 
-     axes = F, ann = F, pch = 20, xlim = c(-0.01, 0.2), main = "Predictor Importance")
-axis(1, at = seq(-0.01, 0.2, 0.05), seq(-0.01, 0.2, 0.05))
-axis(2, at = 1:length(varimpAUC(rfmodel1)), names(varimpAUC(rfmodel1))[order(varimpAUC(rfmodel1))], las = 2)
-grid()
-box()
-par(mar = c(5, 4, 4, 2) + 0.1)
+# plot result
+dotchart(sort(rfmodel1_robustvarimp), pch = 20, main = "Conditional importance of variables")
 
 ###############################################################
 # an alternative way to caluculate random forests which 
@@ -417,6 +369,7 @@ tuneRF(rfdata[, !colnames(rfdata)== "SUFLike"],
        rfdata[, colnames(rfdata)== "SUFLike"],
        stepFactor = 2, # 2 has the lowest value to be optimal
        plot = T, ntreeTry = 50, trace = T, improve = .05)
+
 # set.seed (to store random numbers and thus make results reporducible)
 set.seed(2019120206)
 # create a new model with fewer trees and that takes 2 variables at a time
