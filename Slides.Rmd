@@ -1,8 +1,18 @@
 ---
-title: "CoEDL Summer School 2019 :: Advanced Statistics for Linguists (coedlstatzr)"
-author: "Martin Schweinberger <www.martinschweinberger.de>"
-date: "contact: m.schweinberger@uq.edu.au"
+title: |
+  | CoEDL Summer School 2019 
+  | Advanced Statistics for Linguists 
+  | (coedlstatzr)
+author:  | 
+  | Martin Schweinberger 
+  | <www.martinschweinberger.de>
+  | m.schweinberger@uq.edu.au
+date: "2019 12 04"
 output: beamer_presentation
+bibliography: bibliography.bib
+link-citations: yes
+header-includes:
+- \setbeamertemplate{footline}{\thepage}
 ---
 
 ```{r setup, include=FALSE}
@@ -11,20 +21,26 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## CoEDL Summer School 2019 - Advanced Statistics for Linguists (coedlstatzr)
 
-Before we start, download the zip-file "AdvancedStatzForLinguists", unzip wherever you please and open it (all you will ever need - for this work shop - is in that folder)!
+**Before we begin**
 
-You can automatically download the zipped folder from <https://martinschweinberger.de/docs/materials/AdvancedStatzForLinguists.zip>.
+- All you will ever need - for this work shop - is in the folder I sent.
 
-All code and more elaborate explainations of what we will cover is available at the LADAL website (Language Technology and Data Analysis Laboratory; <https://slcladal.github.io/index.html>) hosted by the *School of Languages and Culters* of The University of Queensland, Australia (UQ)
+- If you have not received my email type the following into your browser to automatically download that folder <https://martinschweinberger.de/docs/materials/AdvancedStatzForLinguists.zip>
+
+- Unzip wherever you please and open it!
+
+- All code and more elaborate explainations of what we will cover is available at the website of the *Language Technology and Data Analysis Laboratory* (LADAL)   <https://slcladal.github.io/index.html>
+
+LADAL is hosted by the *School of Languages and Culters* of The University of Queensland, Australia (UQ)
 
 ## About this Course
 
 What will we cover?
 
 - Simple linear regression
-- Fixed-effects regression (linear|logistic)
-- Mixed-effects regression (linear|logistic|quasi-poisson)
-- Tree-based models (Conditional Inference Trees|Random Forests|Boruta)
+- Fixed-effects regression (linear | logistic)
+- Mixed-effects regression (linear | logistic | quasi-poisson)
+- Tree-based models (Conditional Inference Trees | Random Forests | Boruta)
 
 Aims
 
@@ -34,20 +50,25 @@ Aims
 
 ## About this Course
 
-What this course is **NOT**
+Why is this course relevant for researchers that already know statistics?
+
+- Best Practices emerge only with time
+- Different people know different things (I have never not learned anything when I attended a lecture about sth I already "knew")
+- Tips and tricks about model fitting and model diagnostics
+- Adding and sharing to this course (*please* let us know if you have tips, tricks, or experience with sth: we are *all* here to learn!)
+
+## About this Course
+
+What this course is *not*
 
 - This is not an introduction to statistics 
+- This is not an introduction to R
 
-- This is not an intro to R
-
-What will we **NOT** cover?
+What will we *not* cover?
 
 - Basic concepts (probability, significance, etc.) 
-
-- Yes, everything ww will do will be done in R but we cannot go into how R works
-
+- Yes, everything is done in R but we cannot go into how R works
 - Technical trouble shooting (cry for help and the assitants will come and assits in crying)
-
 - The mathematical underpinning of the models (unless absolutely neccessary)
 
 
@@ -56,7 +77,6 @@ What will we **NOT** cover?
 **Session 1 (Thursday 10:00 to 11:30)**
 
 - Introduction and set up
-
 - Simple linear and multiple fixed-effects regression
 
 **Session 2 (Thursday 9:00 to 10:30)**
@@ -70,16 +90,49 @@ What will we **NOT** cover?
 **Session 4 (Friday 11:00 to 12:30)**
 
 - Tree-based models
-
 - Wrap-up and goodbye
 
 ## Why R?
 
+Good reasons for using R
+
 - Free open-source software
 - Fuly-fledged programming environment
-- Enables and enhances full reproducibility/replicability of your research (enables Best Practices)
-- Can be used fro data science/management/processing/visualization/analytics/presentation
+- Enables and enhances full reproducibility | replicability of your research (enables Best Practices)
+- Can be used for data science | management | processing | visualization | analytics | presentation
 - Massive and friendly support-infrastructure 
+
+## Recommendations
+
+Things that I wish I had done | known earlier
+
+- Use R projects (Rproj)
+- Use tidyverse (yes, i was brought up with base R and still haven't fully adapted)
+- Create a GitHub and/or GitLab account and connect R to Git (version control, forking, cloud storage)
+- You can use R to create websites (LADAL), apps (Shiny), slides (like these), publications (Rpub)
+- You can do NLP, data management, data visualization, data analytics all in R
+- R allows geo-spatial visualizations (maps)
+
+## What will come next?
+
+Trends that - I believe | predict - will become more frequent in the future
+
+- Mixed-models
+- Bayesian mixed-models (problem with frequentist approach: we evaluate the probabilty of H~1~ via the H~0~ rather than directly)
+- Interactive apps (Shiny for public outreach | schools: to allow students to discover language and make things about language more well known)
+- Replication, Open Data | Science, collaborative research (hopefully)
+- Entering new fields (e.g. History, Cultural and Literary Studies)
+
+## Where from here?
+
+Books about statistics that I can recommend (for beginners)
+
+- @field2012discovering, @levshina2015linguistics, @gries2009statistics, @agresti1996introduction
+
+Books about statistics that I can recommend (for advanced)
+
+- @baayen2008analyzing, @agresti2011categorical, @pinheiro2000mixedmodels, @zuur2009mixedmodels
+
 
 ## Slide with R Output
 
@@ -93,3 +146,4 @@ summary(cars)
 plot(pressure)
 ```
 
+## References
