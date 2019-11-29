@@ -28,13 +28,16 @@ knitr::opts_chunk$set(echo = FALSE)
 
 - All you will ever need - for this work shop - is in the folder I sent.
 
-- If you have not received my email type the following into your browser to automatically download that folder <https://martinschweinberger.de/docs/materials/AdvancedStatzForLinguists.zip>
+- If you have not received my email type the following into your browser to automatically download that folder 
+
+\begin{small}
+<www.martinschweinberger.de/docs/materials/AdvancedStatzForLinguists.zip>
+\end{small}
 
 - Unzip wherever you please and open it!
 
-- All code and more elaborate explanations of what we will cover is available at the website of the *Language Technology and Data Analysis Laboratory* (LADAL)   <https://slcladal.github.io/index.html>
-
-LADAL is hosted by the *School of Languages and Cultures* of The University of Queensland, Australia (UQ)
+- All code and more elaborate explanations of what we will cover is available at the website of the *Language Technology and Data Analysis Laboratory* (LADAL) hosted by the *School of Languages and Cultures* of UQ 
+\begin{small} <https://slcladal.github.io/index.html>\end{small} 
 
 ## About this Course
 
